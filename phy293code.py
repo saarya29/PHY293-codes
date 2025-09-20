@@ -4,28 +4,42 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-def cct1(V, I, R, V_err, I_err, R_err, R_amm_vals, R_amm_err):
-    #Step 1: 
-    
-    for i in range(len(R)):
-        R_amm = V[i]/I[i] - R[i]
-        #Step 2: error propogation (V/I)error
-        R_total_err = (((V[i]/I[i])**2)*((V_err[i]/V[i])**2 + (I_err[i]/I[i])**2) + R_err[i]**2)**0.5
-        #Step 3: 
-        print("R_amm =", R_amm, "±", R_total_err)
-        R_amm_vals.append(R_amm)
-        R_amm_err.append(R_total_err)
-    print("average resistance:", str(sum(R_amm_vals)/len(R_amm_vals)))
-    print("average uncert:" , str(sum(R_amm_err)/len(R_amm_err))) 
 
 R = [99.17, 2699.9, 26890, 101460]
 R_err = [0.24834, 10.398, 103.78, 252.92]
+
 V1 = [6.496,6.5, 6.5,6.5]
-V_err1 = [0.008247, 0.00825, 0.00825, 0.00825]
+V_err1 = [0.005247, 0.00525, 0.00525, 0.00525]
 I1 = [0.065e-3,0.002e-3, -0.00003e-3, -0.00003e-3]	
 I_err1 = [0.00513e-3, 0.005004e-3, 0.00049994e-3, 0.00049994e-3]
+
+V2 = [6.496,6.5, 6.5,6.5]
+V_err2 = [0.005248, 0.00525, 0.00525, 0.00525]
+I2 = [0.0648e-3, 0.0018e-3, -0.0001e-3, -0.0003e-3]
+I_err2 = [0.0051296e-3, 0.005004e-3, 0.00049994e-3, 0.00049994e-3]
+
 R_a_values = []
 R_a_err_vals=[]
+R_v_values = []
+R_v_err_vals=[]
+
+
+def cct1(V, I, R, V_err, I_err, R_err, R_amm_vals, R_amm_err):
+    for i in range(len(R)):
+        R_amm = V[i]/I[i] - R[i]
+        
+        R_total_err = (((V[i]/I[i])**2)*((V_err[i]/V[i])**2 + (I_err[i]/I[i])**2) + R_err[i]**2)**0.5
+        
+        print("R_amm =", R_amm, "±", R_total_err)
+        R_amm_vals.append(R_amm)
+        R_amm_err.append(R_total_err)
+    R_av=sum(R_amm_vals)/len(R_amm_vals)
+    R_av_err=sum(R_amm_err)/len(R_amm_err)
+    print("average resistance:", str(R_av))
+    print("average uncert:" , str(R_av_err)) 
+    return R_av, R_av_err
+
+
 
 def cct2(V, I, R, V_err, I_err, R_err, R_v_values, R_err_vals):
     #Step 1:
@@ -35,16 +49,11 @@ def cct2(V, I, R, V_err, I_err, R_err, R_v_values, R_err_vals):
         print("R_voltmeter =", R_v, "±", R_v_err)
         R_v_values.append(R_v) 
         R_err_vals.append(R_v_err)
-    print("average resistance:", str(sum(R_v_values)/len(R_v_values)))
-    print("average uncert:" , str(sum(R_err_vals)/len(R_err_vals)))
-V2 = [6.496,6.5, 6.5,6.5]
-V_err2 = [0.008248, 0.00825, 0.00825, 0.00825]
-I2 = [0.0648e-3, 0.0018e-3, -0.0001e-3, -0.0003e-3]
-I_err2 = [0.0051296e-3, 0.005004e-3, 0.00049994e-3, 0.00049994e-3]
-R_v_values = []
-R_v_err_vals=[]
-
-cct2(R, V2, I2, R_err, V_err2, I_err2, R_v_values, R_v_err_vals)
+    R_av=sum(R_v_values)/len(R_v_values)
+    R_av_err=sum(R_err_vals)/len(R_err_vals)
+    print("average resistance:", str(R_av))
+    print("average uncert:" , str(R_av_err))
+    return R_av, R_av_err
 
 
 def plot_function_lin_reg(I1, V1, I_err1, V_err1, num, L):
@@ -159,9 +168,13 @@ def calculate_power_source_resistanceR2(m2, R_a, m2_err, R_a_err):
     R2_err = np.sqrt(m2_err**2 + R_a_err**2)
     print("R2 =", R2, "±", R2_err)
 
+R_a, R_a_err=cct1(R, V1, I1, R_err, V_err1, I_err1, R_a_values, R_a_err_vals)
+R_v, R_v_err=cct2(R, V2, I2, R_err, V_err2, I_err2, R_v_values, R_v_err_vals)
 L1=[] #stores slope, error of slope respectively for cct1
 L2=[] #stores slope, error of slope respectively for cct2
 plot_function_lin_reg(I1, V1, I_err1, V_err1, 1, L1)
 plot_function_lin_reg(I2, V2, I_err2, V_err2, 2, L2)
-R_v=-1.6550068765387687e-05
-R_v_err=-2.2847201975753817e-06
+residuals_plot(I1, V1, I_err1, V_err1, 1)
+residuals_plot(I2, V2, I_err2, V_err2, 2)
+calculate_power_source_resistanceR1(L1[0], R_v, L1[1], R_v_err)
+calculate_power_source_resistanceR2(L2[0], R_a, L2[1], R_a_err)
